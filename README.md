@@ -24,7 +24,6 @@ The script will extract the following frontmatter:
 alias:
 city:
 wings:
-  -
 sets:
 propals:
 close:
@@ -34,10 +33,10 @@ It will then fill the contexte section of the file with the extracted frontmatte
 It will extract the date from the alias and format it in a French format. Then it will add the wings and the city to the contexte.
 Finally if the `sets`, `propals` and `close` are defined, it will add them in the format `sets/propals/close` to the contexte.
 
-> ![IMPORTANT]
+> [!IMPORTANT]
 > The alias is used to extract the date of the session. The date is expected to be in the format `YYYY-MM-DD`. The alias is expected to be in the format `Session [DG|NG] YYYY-MM-DD <place>`.
 
-> ![NOTE]
+> [!TIP]
 > Fields are optionnal and the script will only add them if they are defined in the frontmatter. Only the `alias` is mandatory.
 
 
@@ -54,7 +53,7 @@ npm start -- -i <input-file>
 | -i, --input | The input file to process |
 | -f, --force | Force the overwriting of the input file |
 
-> ![IMPORTANT]
+> [!NOTE]
 > To avoid overwriting the input file with a already defined contexte section, the script will stop and ask for the `--force` option to be set.
 
 ### Example
