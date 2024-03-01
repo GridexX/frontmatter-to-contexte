@@ -1,9 +1,11 @@
 const fs = require('fs');
 const yaml = require('js-yaml');
+const { basename } = require('path');
 
 const CONTENT_BETWEEN_SECTION = 14;
 const CONTEXT_TEXT = "### Contexte\n"
 const NEXT_SECTION_TEXT = "### Objectifs\n"
+const RegexDate = /\d{4}-\d{2}-\d{2}/;
 
 // Function to read the Markdown file
 const readMarkdownFile = (filePath) => {
@@ -27,8 +29,36 @@ const parseFrontMatter = (markdownContent) => {
   }
 };
 
+
+// This function returns the date in french format or null if the date is not found
+const extractDateAndConvertInFrench = (string) => {
+  // With a regex extract the date from the filename or the alias. It is in format YYYY-MM-DD
+  // Then split the string with '-' as separator
+  try {
+    const dateMatch = string.match(RegexDate);
+    if (dateMatch) {
+      const date = dateMatch[0].split('-');
+      return date[2] + "/" + date[1] + "/" + date[0];
+    }
+  } catch (error) {
+    console.error(`Error extracting date from string ${string}: ${error}`);
+  }
+  return null;
+}
+
+const removeDateFromString = (string) => {
+  // This function remove the date in format YYYY-MM-DD from a string and return the string without the date
+  try {
+    // Replace two or more spaces with a single space
+    return string.replace(RegexDate, '').replace(/\s{2,}/g, ' ');
+  } catch (error) {
+    console.error(`Error removing date from string ${string}: ${error}`);
+  }
+  return string;
+}
+
 // Function to modify YAML front matter
-const getAttributesFrontMatter = (frontMatter) => {
+const getAttributesFrontMatter = (frontMatter, fileName) => {
   // Extract the attributes we need from the front matter
   const { alias: AliasStr, aliases, city, wings, sets, propals, close } = frontMatter;
   const alias = AliasStr ?? aliases?.[0];
@@ -40,34 +70,19 @@ const getAttributesFrontMatter = (frontMatter) => {
     return null;
   }
 
-  // With a regex extract the date from the alias. It is in format YYYY-MM-DD
-  // Then split the string with '-' as separator
-  const dateExtracted = alias.match(/\d{4}-\d{2}-\d{2}/)[0].split('-');
+  const dateInFileName = extractDateAndConvertInFrench(fileName);
+  const dateInAlias = extractDateAndConvertInFrench(alias);
+  const date = dateInAlias || dateInFileName;
 
-  // Extract the text behind the date
-  let session = alias.match(/(.*)\d{4}-\d{2}-\d{2}/)[1];
-  if (session.endsWith(' ')) {
-    session = session.slice(0, -1);
-  }
-  // Retrieve the place from alias
-  let place = alias.match(/\d{4}-\d{2}-\d{2}(.*)/)[1];
-  if (place.startsWith(' ')) {
-    place = place.slice(1);
-  }
-
-  //Then reverse the array and join it with '/'
-  const dateFrench = dateExtracted[2] + "/" + dateExtracted[1] + "/" + dateExtracted[0];
-
+  const session = removeDateFromString(alias);
   // Format wings list, add ", " between each wing and "et" before the last one
   const wingsFormatted = wings?.join(', ').replace(/,([^,]*)$/, ' et$1') || [];
-
 
   // Add a line below the "Contexte" section
   return {
     session,
     city,
-    place,
-    date: dateFrench,
+    date,
     wings: wingsFormatted,
     sets,
     propals,
@@ -79,7 +94,6 @@ const attributesToString = (attributes) => {
   const {
     session,
     city,
-    place,
     date,
     wings,
     sets,
@@ -95,7 +109,7 @@ const attributesToString = (attributes) => {
 
   const wingsSentence = wings.length > 0 ? ` avec ${wings}` : '';
   const citySentence = city ? ` à ${city}` : '';
-  return `${date} ${session} ${place}${citySentence}${wingsSentence}.${setsPropalsClose}\n\n`;
+  return `${date} ${session}${citySentence}${wingsSentence}.${setsPropalsClose}\n\n`;
 }
 
 // Function to write modified content back to the Markdown file
@@ -154,7 +168,8 @@ const main = (filePath, forceWriting) => {
   if (!frontMatter) return;
 
   // Modify YAML front matter
-  const frontMatterAttributes = getAttributesFrontMatter(frontMatter);
+  const fileName = basename(filePath);
+  const frontMatterAttributes = getAttributesFrontMatter(frontMatter, fileName);
   if (!frontMatterAttributes) return;
 
   // Write modified content back to the Markdown file
