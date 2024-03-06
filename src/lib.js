@@ -4,7 +4,7 @@ const { basename } = require('path');
 
 const CONTENT_BETWEEN_SECTION = 14;
 const CONTEXT_TEXT = "### Contexte\n"
-const NEXT_SECTION_TEXT = "### Objectifs\n"
+const NEXT_SECTION_TEXT = "### Objectifs"
 const RegexDate = /\d{4}-\d{2}-\d{2}/;
 
 // Function to read the Markdown file
@@ -112,13 +112,24 @@ const attributesToString = (attributes) => {
   return `${date} ${session}${citySentence}${wingsSentence}.${setsPropalsClose}\n\n`;
 }
 
+const descriptionFromAttributes = (attributes) => {
+  const {
+    session,
+    city,
+    wings
+  } = attributes;
+  const wingsSentence = wings.length > 0 ? ` avec ${wings}` : '';
+  const citySentence = city ? ` à ${city}` : '';
+  return `${session}${citySentence}${wingsSentence}`;
+}
+
 // Function to write modified content back to the Markdown file
 const writeMarkdownFile = (filePath, modifiedContent) => {
   try {
     fs.writeFileSync(filePath, modifiedContent);
     console.log('File successfully modified.');
   } catch (error) {
-    console.error(`Error writing file: ${error}`);
+    console.error(`Error writing file: ${error} `);
   }
 };
 
@@ -157,6 +168,25 @@ const modifyMarkdownContent = (markdownContent, attributes, forceWriting) => {
   return modifiedContent;
 };
 
+const addDescriptionToFrontMatter = (markdownContent, frontMatter, attributes) => {
+  const description = descriptionFromAttributes(attributes);
+  //
+  frontMatter.description = description;
+
+  // Convert the front matter to YAML
+  str = yaml.dump(frontMatter);
+
+  // THen replace the front matter in the markdown file
+  const frontMatterPattern = /^---\n([\s\S]+?)\n---/;
+  const match = markdownContent.match(frontMatterPattern);
+  if (match) {
+    return markdownContent.replace(frontMatterPattern, '---\n' + str + '---');
+  } else {
+    console.error('Front matter not found in the Markdown file.');
+    return null;
+  }
+};
+
 // Main function to orchestrate the process
 const main = (filePath, forceWriting) => {
   // Read the Markdown file
@@ -173,7 +203,8 @@ const main = (filePath, forceWriting) => {
   if (!frontMatterAttributes) return;
 
   // Write modified content back to the Markdown file
-  const modifiedContent = modifyMarkdownContent(markdownContent, frontMatterAttributes, forceWriting);
+  let modifiedContent = modifyMarkdownContent(markdownContent, frontMatterAttributes, forceWriting);
+  modifiedContent = addDescriptionToFrontMatter(modifiedContent, frontMatter, frontMatterAttributes);
   if (!modifiedContent) return;
   writeMarkdownFile(filePath, modifiedContent);
 };
