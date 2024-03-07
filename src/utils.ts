@@ -39,7 +39,7 @@ export const extractFrontMatter = (markdownContent: string): string | null => {
 };
 
 export const getAttributesFrontMatter = (
-  frontMatterStr: string,
+  frontMatterStr: string
 ): FrontMatterAttributes | null => {
   const frontMatter = yaml.load(frontMatterStr);
   const result = frontMatterAttributesSchema.safeParse(frontMatter);
@@ -74,7 +74,7 @@ export const generateDescription = (description: DescriptionFields): string => {
 
 export const convertAttributesToFinalFrontMatter = (
   fileName: string,
-  attributes: FrontMatterAttributes,
+  attributes: FrontMatterAttributes
 ): FinalFrontMatter => {
   const dateInFileName = extractDateFromString(fileName);
   const dateInAlias = extractDateFromString(attributes.aliases[0]);
@@ -82,7 +82,7 @@ export const convertAttributesToFinalFrontMatter = (
   const date = dateInFileName ?? dateInAlias ?? "";
   if (!date) {
     logger.error(
-      `Date not found in the filename or the alias of the file ${fileName}`,
+      `Date not found in the filename or the alias of the file ${fileName}`
     );
   }
 
@@ -109,28 +109,85 @@ export const convertAttributesToFinalFrontMatter = (
 };
 
 const removeDateFromAlias = (alias: string): string => {
-  const dateMatch = alias.match(DATE_REGEX);
-  if (dateMatch) {
-    // Remove the date from the alias and replace multiple spaces by one
-    return alias
-      .replace(dateMatch[0], "")
-      .replace(/\s{2,}/g, " ")
-      .trim();
-  }
-  return alias;
+  // Remove the date from the alias and replace multiple spaces by one
+  return alias
+    .replace(/\d{4}-\d{2}-\d{2}/, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+};
+
+export const formatStats = (finalFrontMatter: FinalFrontMatter): string => {
+  const { sets, marquants, propals, close, kc, pull, fc } = finalFrontMatter;
+  const stats: (number | undefined)[] = [
+    sets,
+    marquants,
+    propals,
+    close,
+    kc,
+    pull,
+    fc,
+  ];
+
+  // Filter out undefined and 0 values from the stats array
+  const filteredStats = stats.filter(
+    (stat) => stat !== undefined && stat !== 0
+  );
+
+  // Join the remaining values with a '/' separator
+  const formattedStats = filteredStats.join("/");
+
+  return formattedStats;
+};
+
+export const generateMarkdownTable = (
+  finalFrontMatter: FinalFrontMatter
+): string => {
+  // Extract stat names and values from the FinalFrontMatter object
+  const statNames: (keyof FinalFrontMatter)[] = [
+    "sets",
+    "marquants",
+    "propals",
+    "close",
+    "kc",
+    "pull",
+    "fc",
+  ];
+
+  const statValues = statNames.map((statName) => finalFrontMatter[statName]);
+
+  // Filter out undefined values from the statValues array
+  const filteredStatValues = statValues.filter((value) => value !== undefined);
+
+  // Create the first row of the table with stat names
+  const headerRow = `| ${statNames.join(" | ")} |\n`;
+
+  // Create the separator row
+  const separatorRow = `| ${statNames.map(() => "---").join(" | ")} |\n`;
+
+  // Create the second row of the table with stat values
+  const valueRow = `| ${filteredStatValues
+    .map((value) => value.toString())
+    .join(" | ")} |\n`;
+
+  // Combine the rows to create the Markdown table
+  const table = `${headerRow}${separatorRow}${valueRow}`;
+
+  return table;
 };
 
 export const generateContextSentenceFromFinalAttributes = (
-  finalFrontMatter: FinalFrontMatter,
+  finalFrontMatter: FinalFrontMatter
 ): string => {
-  const { date, description, sets, propals, close } = finalFrontMatter;
+  const { date, description } = finalFrontMatter;
   const dateFrench = extractDateAndConvertInFrench(date);
   if (!dateFrench) {
     logger.error(
-      `Date not found in the final front matter: ${finalFrontMatter}`,
+      `Date not found in the final front matter: ${finalFrontMatter}`
     );
   }
-  return `${dateFrench} ${description}.\n${sets}/${propals}/${close}\n`;
+  const markdownTable = generateMarkdownTable(finalFrontMatter);
+  return `${dateFrench} ${description}.\n${markdownTable}\n`;
+  // return `${dateFrench} ${description}.\n${formatStats(finalFrontMatter)}\n`;
 };
 
 // This function returns the date in french format or null if the date is not found
@@ -151,7 +208,7 @@ const extractDateAndConvertInFrench = (string: string) => {
 export const generateNewMarkdownContent = (
   markdownContent: string,
   contexteStr: string,
-  forceWriting: boolean,
+  forceWriting: boolean
 ): string | undefined => {
   // Check if there are other different caracters from \n or whitespace between the contexte and the next section (Objectifs)
   const contexteEndIndex = markdownContent.indexOf(NEXT_SECTION_TEXT);
@@ -160,7 +217,9 @@ export const generateNewMarkdownContent = (
     contexteEndIndex - contexteIndex !== CONTEXT_TEXT.length;
 
   if (isContentBetweenSection) {
-    logger.warn("There are words between the contexte and the next section");
+    logger.warn(
+      "There are words between the contexte and the next section that would be overwritten."
+    );
     if (!forceWriting) {
       ("You can force the writing with the -f option");
       return;
@@ -179,7 +238,7 @@ export const generateNewMarkdownContent = (
 
 export const recomposeMarkdownContent = (
   finalFrontMatter: FinalFrontMatter,
-  markdown: string,
+  markdown: string
 ) => {
   return "---\n" + yaml.dump(finalFrontMatter) + "---\n\n" + markdown;
 };
