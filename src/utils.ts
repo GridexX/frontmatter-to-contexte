@@ -1,9 +1,6 @@
-import { AnyZodObject, date } from "zod";
 import {
   FinalFrontMatter,
   FrontMatterAttributes,
-  GenerateContexte,
-  MarkdownFile,
   frontMatterAttributesSchema,
 } from "./types";
 import fs from "fs";
@@ -23,7 +20,7 @@ export const readFile = (filePath: string): string | null => {
 export const getMarkdownContent = (content: string): string => {
   // This function should return the content of the markdown file
   // It cut the front matter from the content
-  const frontMatterPattern = /^(---\n[\s\S]+?\n---\n\n)/;
+  const frontMatterPattern = /^(---\n[\s\S]+?\n---\n\n?)/;
   return content.replace(frontMatterPattern, "");
 };
 
@@ -69,7 +66,12 @@ export const generateDescription = (description: DescriptionFields): string => {
     .replace("session", "")
     .replace(/\s{2,}/g, " ")
     .trim();
-  return `Session ${session} à ${city} avec ${wingsFormatted}`;
+  const descriptionFormatted =
+    `Session ${session} à ${city} avec ${wingsFormatted}`.replace(
+      /\s{2,}/g,
+      " "
+    );
+  return descriptionFormatted;
 };
 
 export const convertAttributesToFinalFrontMatter = (
