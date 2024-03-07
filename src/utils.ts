@@ -186,7 +186,7 @@ export const generateContextSentenceFromFinalAttributes = (
     );
   }
   const markdownTable = generateMarkdownTable(finalFrontMatter);
-  return `${dateFrench} ${description}.\n${markdownTable}\n`;
+  return `${dateFrench} ${description}.\n\n${markdownTable}`;
   // return `${dateFrench} ${description}.\n${formatStats(finalFrontMatter)}\n`;
 };
 
