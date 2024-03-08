@@ -120,6 +120,32 @@ describe("generateDescription", () => {
       "Session aux Champs-Élysées à Paris avec Gérard et Victor"
     );
   });
+
+  it("should correctly separate wings", () => {
+    const description = {
+      alias: "Session 2023-03-15 aux Champs-Élysées",
+      city: "Paris",
+      wings: ["Gérard", "Victor", "Rayan"],
+    };
+
+    const result = generateDescription(description);
+
+    expect(result).toEqual(
+      "Session aux Champs-Élysées à Paris avec Gérard, Victor et Rayan"
+    );
+  });
+
+  it("should works with empty wings", () => {
+    const description = {
+      alias: "Session 2023-03-15 aux Champs-Élysées",
+      city: "Paris",
+      wings: [],
+    };
+
+    const result = generateDescription(description);
+
+    expect(result).toEqual("Session aux Champs-Élysées à Paris");
+  });
 });
 
 describe("convertAttributesToFinalFrontMatter", () => {
@@ -127,6 +153,7 @@ describe("convertAttributesToFinalFrontMatter", () => {
     const fileName = "test-file_2023-03-15.md";
     const attributes = {
       aliases: ["Session à Chatelet"],
+      tags: ["tag1", "tag2"],
       city: "Paris",
       wings: ["wing1", "wing2"],
       sets: 10,
@@ -141,6 +168,7 @@ describe("convertAttributesToFinalFrontMatter", () => {
     expect(result).toEqual({
       aliases: ["Session à Chatelet"],
       city: "Paris",
+      tags: ["tag1", "tag2"],
       wings: ["wing1", "wing2"],
       sets: 10,
       marquants: 5,
@@ -231,6 +259,7 @@ describe("generate final attributes from front matter", () => {
       aliases: ["Session 2023-03-15"],
       city: "Paris",
       wings: ["wing1", "wing2"],
+      tags: [],
       sets: 10,
       marquants: 5,
       propals: 3,
