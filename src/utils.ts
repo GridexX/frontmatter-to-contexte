@@ -61,16 +61,15 @@ type DescriptionFields = {
 export const generateDescription = (description: DescriptionFields): string => {
   const { alias, city, wings } = description;
   const wingsFormatted = wings.join(", ").replace(/,([^,]*)$/, " et$1") || [];
+  const wingsSentence =
+    wingsFormatted.length > 1 ? ` avec ${wingsFormatted}` : "";
   const session = removeDateFromAlias(alias)
     .replace("Session", "")
     .replace("session", "")
     .replace(/\s{2,}/g, " ")
     .trim();
   const descriptionFormatted =
-    `Session ${session} à ${city} avec ${wingsFormatted}`.replace(
-      /\s{2,}/g,
-      " "
-    );
+    `Session ${session} à ${city}${wingsSentence}`.replace(/\s{2,}/g, " ");
   return descriptionFormatted;
 };
 
@@ -102,6 +101,7 @@ export const convertAttributesToFinalFrontMatter = (
     pull: attributes.pull ?? 0,
     fc: attributes.fc ?? 0,
     date: date,
+    tags: attributes.tags ?? [],
     description: generateDescription({
       alias: attributes.aliases[0],
       city: attributes.city,
@@ -168,7 +168,7 @@ export const generateMarkdownTable = (
 
   // Create the second row of the table with stat values
   const valueRow = `| ${filteredStatValues
-    .map((value) => value.toString())
+    .map((value) => value?.toString() ?? "0")
     .join(" | ")} |\n`;
 
   // Combine the rows to create the Markdown table

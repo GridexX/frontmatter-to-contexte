@@ -5,6 +5,7 @@ import { DATE_REGEX, FRENCH_DATE_REGEX } from "./constants";
 export const frontMatterAttributesSchema = z.object({
   aliases: z.array(z.string()).min(1),
   city: z.string(),
+  tags: z.array(z.string()).optional(),
   wings: z.array(z.string()).optional(),
   sets: z.number().optional(),
   marquants: z.number().optional(),
@@ -62,6 +63,6 @@ export const finalFrontMatterSchema = z
     date: z.string(),
   })
   .merge(frontMatterAttributesSchema)
-  .required();
-
+  .required()
+  .partial({ wings: true, tags: true }); // .merge(z.object({wings: z.array(z.string()).min(1).optional()}));
 export type FinalFrontMatter = z.infer<typeof finalFrontMatterSchema>;
